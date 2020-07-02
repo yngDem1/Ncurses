@@ -2,121 +2,133 @@
 #include <stdlib.h>
 #include <time.h>
 
-void isGameOver(int x, int snakeX, int y, int snakeY, bool gameOver/*, int snakeLength, int *tailX, int *tailY*/)
+bool gameOver = false;
+bool foodEaten = false;
+int snakeX = 0, snakeY = 0/*, snakeLength */;
+int foodX, foodY, foodValue; 
+int tailX[400], tailY[400];
+int state = 0;
+int score = 0;
+int y = 24;
+int x = 80;
+
+/* void snakeTail
 {
-      /* for(int i = 0; i < snakeLength;i++)
-       if(tailX[i] == snakeX || tailY[i] == snakeY)
-gameOver = true; */
-    if (snakeX >= x || snakeX <= 0 || snakeY >= y || snakeY <= 0)
-    /* if(snakeX >= x+1) snakeX = 0;
-    else if(snakeX < 0) snakeX = x;
-    else if(snakeY >= y+1) snakeY = 0;
-    else if(snakeY < 0) snakeY = y; */
-    gameOver = true;  
+tailY[0] = snakeY;
+tailX[0] = snakeX;
+int lastY = tailY[0];
+} */
+
+int keyCheck(void)
+{
+int ch = getch();
+if (ch != ERR)
+{
+ungetch(ch);
+return 1;
+}
+else
+return 0;
 }
 
-void foodSpawn(int x, int y, int foodX, int foodY, int foodValue, bool foodEaten)
+void snakeMove()
+{
+if (state == 1)
+snakeY--;
+
+if (state == 2)
+snakeY++;
+
+if (state == 3)
+snakeX++;
+
+if (state == 4)
+snakeX--;
+}
+
+void isGameOver()
+{
+if (snakeY == y || snakeY < 0 || snakeX == x || snakeX < 0)
+gameOver = true;
+}
+
+void foodSpawn()
 {
     if (!foodEaten)
     {
-    srand(time(0)); // seed for random generator
-    foodX = (rand() % x) + 1;
-    foodY = (rand() % y) + 1;
-    foodValue = (rand() % 4) + 1;
-    foodEaten = false;
+        srand(time(0));
+        foodX = (rand() % x) + 1;
+        foodY = (rand() % y) + 1;
+        foodValue = (rand() % 10) + 1;
+        foodEaten = false;
     }
-    mvprintw(foodX, foodY, "F");
 }
 
-void eatingFood(int snakeX, int snakeY, int snakeLength, int foodX, int foodY, bool foodEaten, int foodValue, int score)
+void eatingFood()
 {
     if (snakeX == foodX && snakeY == foodY)
     {
-        snakeLength++;
+        // snakeLength++;
         foodEaten = true;
     }
 
-    if (foodEaten == true)
+    if (foodEaten)
     {
-        score = foodValue;
+        score += foodValue;
+        foodEaten = false;
+        foodSpawn();
     }
 }
 
-void snakeSpawn(int x, int y, int snakeX, int snakeY, int snakeLength) 
+int main()
 {
-    snakeX = (rand() % x);
-    snakeY = (rand() % y);
-    snakeLength = 1;
-}
-    
-void snakeMovement(int *tailX, int *tailY, int snakeX, int snakeY, int snakeLength)
+initscr();
+curs_set(0);
+noecho();
+keypad(stdscr, 1);
+halfdelay(1);
+
+foodSpawn();
+while (!gameOver)
 {
-    tailX[0] = snakeX;
-    tailY[0] = snakeY;
-    int lastX = tailX[0];
-    int lastY = tailY[0];
-    int helpX, helpY;
-    for (int i = 1; i < snakeLength; i++)
-    {
-        helpX = tailX[i];
-        helpY = tailY[i];
-        tailX[i] = lastX;
-        tailY[i] = lastY;
-        lastX = helpX;
-        lastY = helpY;
-    }
-}
+mvprintw(23,62, "Current score: %d.", score);
+mvprintw(snakeY, snakeX, "S");
+mvprintw(foodY, foodX, "A");
 
-int main() {
-    bool gameOver = false;
-    bool foodEaten = false;
-    const int x = 20; // width of field
-    const int y = 20; // heigth of field
-    int score = 0;
-    int foodX, foodY, foodValue;
-    int snakeX, snakeY, snakeLength;
-    int tailX[1000], tailY[1000];
-    // ncurses starts here
-    initscr(); // ncurses initialization
-    curs_set(0); // makes mouse cursor invisible
-    noecho();
-    keypad(stdscr, 1); // keypad initialization
-    
-    while(!gameOver)
+if (keyCheck())
 {
-    erase();
+int ch = getch();
+if (ch == KEY_UP)
+state = 1;
 
-    isGameOver(x, y, snakeX, snakeY, &gameOver);
-    snakeSpawn(x, y, snakeX, snakeY, snakeLength);
-    snakeMovement(&tailX[1000], &tailY[1000], snakeX, snakeY, snakeLength);
-    foodSpawn(x, y, foodX, foodY, foodValue, &foodEaten);
-    eatingFood(snakeX, snakeY, snakeLength, foodX, foodY, &foodEaten, foodValue, score);
+if (ch == KEY_DOWN)
+state = 2;
 
-    refresh();
+if (ch == KEY_RIGHT)
+state = 3;
 
-            mvprintw(snakeY, snakeX, "S");
-            
-            int ch = getch();
-            if (ch == KEY_UP)
-            snakeY--;
-            
-            if (ch == KEY_DOWN)
-            snakeY++;
-            
-            if (ch == KEY_LEFT)
-            snakeX--;
-            
-            if (ch == KEY_RIGHT)
-            snakeX++;
+if (ch == KEY_LEFT)
+state = 4;
+
+if (ch == 'q')
+gameOver = true;
+
 
 }
-    cbreak();
-    mvprintw(x/2, y/2, "That's all! Game is over!");
-    mvprintw((x/2)+1, y/2, "Your final score is ", score);
-    mvprintw((x/2)+2, y/2, "Thank you for playing!");
-    refresh();
-    getch();
-    endwin();
+snakeMove();
+isGameOver();
+if(foodEaten)
+foodSpawn();
+eatingFood();
 
-    return 0;
+erase();
+refresh();
+}
+cbreak();
+mvprintw(10, 20, "That's all! Game is over!");
+mvprintw(11, 20, "Your final score is %d.", score);
+mvprintw(12, 20, "Thank you for playing!");
+refresh();
+getch();
+endwin();
 }
