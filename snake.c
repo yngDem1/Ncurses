@@ -2,56 +2,73 @@
 #include <stdlib.h>
 #include <time.h>
 
-void isGameOver(int *x, int *snakeX, int *y, int *snakeY, bool *gameOver)
+void isGameOver(int x, int snakeX, int y, int snakeY, bool gameOver)
 {
     if (snakeX >= x || snakeX <= 0 || snakeY >= y || snakeY <= 0)
     gameOver = true;  
 }
 
-void foodSpawn(int *x, int *y, bool *foodEaten)
+void foodSpawn(int x, int y, int foodX, int foodY, int foodValue, bool foodEaten)
 {
-    if (*foodEaten)
+    if (foodEaten)
     {
     srand(time(0)); // seed for random generator
-    int foodX = (rand() % x) + 1;
-    int foodY = (rand() % y) + 1;
-    int foodValue = (rand() % 10) + 1;
-    *foodEaten = false;
+    foodX = (rand() % x) + 1;
+    foodY = (rand() % y) + 1;
+    foodValue = (rand() % 4) + 1;
+    foodEaten = false;
     }
     mvprintw(foodX, foodY, "F");
 }
 
-void eatingFood(int *snakeX, int *snakeY, int *snakeLength, int *foodX, int *foodY, int *foodValue, int *score)
+void eatingFood(int snakeX, int snakeY, int snakeLength, int foodX, int foodY, bool foodEaten, int foodValue, int score)
 {
     if (snakeX == foodX && snakeY == foodY)
     {
-        snakeLength = snakeLength + foodValue;
-        bool foodEaten = true;
+        snakeLength++;
+        foodEaten = true;
     }
-    
-    if (foodEaten = true)
+
+    if (foodEaten == true)
     {
-        score = (score + 5) + foodValue;
+        score = foodValue;
     }
 }
 
-void snakeSpawn(int *x, int *y) 
+void snakeSpawn(int x, int y, int snakeX, int snakeY, int snakeLength) 
 {
-    int snakeX = (rand() % x);
-    int snakeY = (rand() % y);
-    int snakeLength = 0;
+    snakeX = (rand() % x);
+    snakeY = (rand() % y);
+    snakeLength = 1;
 }
     
-void snakeMovement
+void snakeMovement(int *tailX, int *tailY, int snakeX, int snakeY, int snakeLength)
 {
-    
+    tailX[0] = snakeX;
+    tailY[0] = snakeY;
+    int lastX = tailX[0];
+    int lastY = tailY[0];
+    int helpX, helpY;
+    for (int i = 1; i < snakeLength; i++)
+    {
+        helpX = tailX[i];
+        helpY = tailY[i];
+        tailX[i] = lastX;
+        tailY[i] = lastY;
+        lastX = helpX;
+        lastY = helpY;
+    }
 }
 
 int main() {
     bool gameOver = false;
+    bool foodEaten = false;
     const int x = 20; // width of field
     const int y = 20; // heigth of field
-    int score = 0; 
+    int score = 0;
+    int foodX, foodY, foodValue;
+    int snakeX, snakeY, snakeLength;
+    int tailX[1000], tailY[1000];
     // ncurses starts here
     initscr(); // ncurses initialization
     curs_set(0); // makes mouse cursor invisible
@@ -62,10 +79,10 @@ int main() {
 {
     erase();
 
-    snakeSpawn(&snakeX, &snakeY, &snakeLength);
-    foodSpawn(x, y, *foodEaten);
-    snakeMovement();
-    eatingFood(*snakeX, *snakeY, *snakeLength, *foodX, *foodY, *foodValue)
+    snakeSpawn(x, y, snakeX, snakeY, snakeLength);
+    foodSpawn(x, y, foodX, foodY, foodValue, &foodEaten);
+    snakeMovement(&tailX[1000], &tailY[1000], snakeX, snakeY, snakeLength);
+    eatingFood(snakeX, snakeY, snakeLength, foodX, foodY, &foodEaten, foodValue, score);
 
     refresh();
 
@@ -87,8 +104,8 @@ int main() {
 }
     cbreak();
     mvprintw(x/2, y/2, "That's all! Game is over!");
-    mvprintw(x/2, (y/2)+1, "Your final score is ", score);
-    mvprintw(x/2, (y/2)+2, "Thank you for playing!");
+    mvprintw((x/2)+1, y/2, "Your final score is ", score);
+    mvprintw((x/2)+2, y/2, "Thank you for playing!");
     refresh();
     getch();
     endwin();
