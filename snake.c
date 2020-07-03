@@ -1,10 +1,11 @@
 #include <ncursesw/ncurses.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 bool gameOver = false;
 bool foodEaten = false;
-int snakeX = 0, snakeY = 0/*, snakeLength */;
+int snakeX = 0, snakeY = 0, snakeLength = 3;
 int foodX, foodY, foodValue; 
 int tailX[400], tailY[400];
 int state = 0;
@@ -12,12 +13,23 @@ int score = 0;
 int y = 24;
 int x = 80;
 
-/* void snakeTail
+void snakeTail()
 {
 tailY[0] = snakeY;
 tailX[0] = snakeX;
 int lastY = tailY[0];
-} */
+int lastX = tailX[0];
+int helpY, helpX;
+for (int i = 1; i < snakeLength*2; i++)
+    {
+        helpY = tailY[i];
+        helpX = tailX[i];
+        tailY[i] = lastY;
+        tailX[i] = lastX;
+        lastX = helpX;
+        lastY = helpY;
+    }
+} 
 
 int keyCheck(void)
 {
@@ -57,10 +69,10 @@ void foodSpawn()
     if (!foodEaten)
     {
         srand(time(0));
-        foodX = (rand() % x) + 1;
-        foodY = (rand() % y) + 1;
-        foodValue = (rand() % 10) + 1;
+        foodX = (rand() % (x-2));
+        foodY = (rand() % (y-2));
         foodEaten = false;
+        foodValue++;
     }
 }
 
@@ -68,7 +80,6 @@ void eatingFood()
 {
     if (snakeX == foodX && snakeY == foodY)
     {
-        // snakeLength++;
         foodEaten = true;
     }
 
@@ -77,7 +88,15 @@ void eatingFood()
         score += foodValue;
         foodEaten = false;
         foodSpawn();
+        snakeLength++;
     }
+}
+
+void snakeSpawn()
+{
+    srand(time(0));
+    snakeY = (rand() % (y-2));
+    snakeX = (rand() % (x-2));
 }
 
 int main()
@@ -89,11 +108,14 @@ keypad(stdscr, 1);
 halfdelay(1);
 
 foodSpawn();
+snakeSpawn();
 while (!gameOver)
 {
 mvprintw(23,62, "Current score: %d.", score);
-mvprintw(snakeY, snakeX, "S");
 mvprintw(foodY, foodX, "A");
+for (int i = 0; i < snakeLength; i++)
+mvprintw(tailY[i], tailX[i], "K");
+mvprintw(snakeY, snakeX, "S");
 
 if (keyCheck())
 {
@@ -115,8 +137,9 @@ gameOver = true;
 
 
 }
-snakeMove();
 isGameOver();
+snakeMove();
+snakeTail();
 if(foodEaten)
 foodSpawn();
 eatingFood();
